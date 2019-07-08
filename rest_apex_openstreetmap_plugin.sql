@@ -143,7 +143,7 @@ wwv_flow_api.create_plugin_attribute(
 ,p_default_value=>wwv_flow_string.join(wwv_flow_t_varchar2(
 '-- marker_type: markers or polygons',
 '-- loc_type: point or points',
-'select marker_type as src_marker_type, loc_type as src_loc_type, replace(lat, '','', ''.'')||'', ''||replace(lng, '','', ''.'') as src_loc, color as src_color, label as src_label from src_table'))
+'select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label from src_table'))
 ,p_is_translatable=>false
 );
 wwv_flow_api.create_plugin_attribute(
