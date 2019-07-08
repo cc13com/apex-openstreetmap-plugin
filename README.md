@@ -49,6 +49,8 @@ The `Source` attribute should contain an SQL statement like :
 select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label from src_table
 ```
 
+## DB-Columns and JSON
+
 "markers" and "polygons" = src_marker_type, "point" and "points" = src_lat,src_lng or src_loc 
 
 ```json
@@ -58,16 +60,6 @@ select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat,
       "point": [50.45, 30.523333],
       "color": "red",
       "text": "Red marker text"
-    },
-    {
-      "point": [50.4, 30.53],
-      "color": "blue",
-      "text": "Blue marker text"
-    },
-    {
-      "point": [50.41, 30.5],
-      "color": "green",
-      "text": "Green marker text"
     }
   ],
   "polygons": [
@@ -89,15 +81,21 @@ select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat,
         [50.51, 30.5],
       ]
     },
-    {
-      "color": "green",
-      "text": "Green polygon text",
-      "points": [
-        [50.45, 30.623333],
-        [50.4, 30.63],
-        [50.41, 30.6],
+    ...
       ]
     }
   ]
 }
 ```
+## DB-SQL
+```
+CREATE TABLE  "TEST" 
+   (	"MARKER_TYPE" VARCHAR2(80), 
+	"LAT" NUMBER(10,8), 
+	"LNG" NUMBER(10,8), 
+	"LOC_TYPE" VARCHAR2(80), 
+	"COLOR" VARCHAR2(80), 
+	"LABEL" VARCHAR2(4000), 
+	"LOC" VARCHAR2(4000)
+   )
+ ```
