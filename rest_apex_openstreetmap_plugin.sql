@@ -15,16 +15,16 @@ begin
 wwv_flow_api.import_begin (
  p_version_yyyy_mm_dd=>'2019.03.31'
 ,p_release=>'19.1.0.00.15'
-,p_default_workspace_id=>8418247208905171034
-,p_default_application_id=>58044
-,p_default_owner=>'APEX.REST'
+,p_default_workspace_id=>1290518786533372
+,p_default_application_id=>100
+,p_default_owner=>'FISHMAP'
 );
 end;
 /
 prompt --application/shared_components/plugins/region_type/rest_apex_osm_plugin
 begin
 wwv_flow_api.create_plugin(
- p_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8433543204486998348)
 ,p_plugin_type=>'REGION TYPE'
 ,p_name=>'REST.APEX.OSM_PLUGIN'
 ,p_display_name=>'OpenStreetMap Plugin'
@@ -38,12 +38,20 @@ wwv_flow_api.create_plugin(
 '    p_is_printer_friendly in boolean )',
 '    return apex_plugin.t_region_render_result',
 'is',
+'    -- variables',
+'    map_data_markers apex_plugin_util.t_column_value_list;',
+'    map_data_polygons apex_plugin_util.t_column_value_list;',
+'    query_markers varchar2(400) :=	''''''{"''''||src_loc_type||''''": [''''||replace(src_lat, '''','''', ''''.'''')||'''', ''''||replace(src_lng, '''','''', ''''.'''')||''''], "color": "''''||src_color||''''", "text": "''''||src_label||''''"},'''''';',
+'    query_polygons varchar2(400) :=	''''''{"''''||src_loc_type||''''": [''''||src_loc||''''], "color": "''''||src_color||''''", "text": "''''||src_label||''''"},'''''';',
+'    x number;',
+'    ',
 '    -- attributes',
 '    height varchar2(10) := nvl(p_region.attribute_01, ''700px'');',
-'    source varchar(4000) := nvl(p_region.attribute_02, '''');',
-'    ',
-'    -- variables',
-'    map_data apex_plugin_util.t_column_value_list;',
+'    center varchar2(100) := nvl(p_region.attribute_03, ''lat, lng'');',
+'    zoom varchar2(100) := nvl(p_region.attribute_04, ''14'');',
+'    max_zoom varchar2(100) := nvl(p_region.attribute_05, ''18'');',
+'    source varchar2(400) := nvl(p_region.attribute_02, ''select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label from src_table'');',
+'        ',
 'begin',
 '    apex_javascript.add_library (',
 '        p_name      => ''map'',',
@@ -51,8 +59,8 @@ wwv_flow_api.create_plugin(
 '        p_version   => NULL',
 '    );',
 '',
-'    map_data := APEX_PLUGIN_UTIL.GET_DATA (',
-'        p_sql_statement    => source,',
+'    map_data_markers := APEX_PLUGIN_UTIL.GET_DATA (',
+'        p_sql_statement    => ''select ''||query_markers||'' as results from (''||source||'' where marker_type = ''''markers'''')'',',
 '        p_min_columns      => 1,',
 '        p_max_columns      => 1,',
 '        p_component_name   => p_region.name,',
@@ -60,16 +68,38 @@ wwv_flow_api.create_plugin(
 '        p_search_column_no => NULL,',
 '        p_search_string    => NULL,',
 '        p_first_row        => NULL,',
-'        p_max_rows         => 1',
+'        p_max_rows         => NULL',
+'    );',
+'    map_data_polygons := APEX_PLUGIN_UTIL.GET_DATA (',
+'        p_sql_statement    => ''select ''||query_polygons||'' as results from (''||source||'' where marker_type = ''''polygons'''')'',',
+'        p_min_columns      => 1,',
+'        p_max_columns      => 1,',
+'        p_component_name   => p_region.name,',
+'        p_search_type      => NULL,',
+'        p_search_column_no => NULL,',
+'        p_search_string    => NULL,',
+'        p_first_row        => NULL,',
+'        p_max_rows         => NULL',
 '    );',
 '    htp.p(''',
 '        <div id="mapid" style="width: 100%; height: '' || height || '';"></div>',
 '        <script>       ',
 '            function renderMap() {',
-'                var mymap = L.map("mapid").setView([48.5, 31], 6);',
-'                L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {maxZoom: 18}).addTo(mymap);',
+'                var mymap = L.map("mapid").setView([''||center||''], ''||zoom||'');',
+'                L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {maxZoom: ''||max_zoom||''}).addTo(mymap);',
 '          ',
-'                updateMap(mymap, '' || map_data(1)(1) || '', "'' || p_plugin.file_prefix || ''");',
+'                updateMap(mymap, '' || ''{markers:['');',
+'                ',
+'    FOR x in 1 .. map_data_markers(1).count LOOP',
+'        htp.p(map_data_markers(1)(x));',
+'    end loop;',
+'    ',
+'    htp.p(''],polygons:['');',
+'    FOR y in 1 .. map_data_polygons(1).count LOOP',
+'        htp.p(map_data_polygons(1)(y));',
+'    end loop;',
+'    ',
+'    htp.p('']}, "'' || p_plugin.file_prefix || ''");',
 '            };',
 '        </script>',
 '    '');',
@@ -82,12 +112,12 @@ wwv_flow_api.create_plugin(
 ,p_render_function=>'render_osm_map'
 ,p_substitute_attributes=>true
 ,p_subscribe_plugin_settings=>true
-,p_version_identifier=>'1.0'
+,p_version_identifier=>'1.1'
 ,p_files_version=>25
 );
 wwv_flow_api.create_plugin_attribute(
- p_id=>wwv_flow_api.id(8444494062936513652)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8446135229023630630)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_attribute_scope=>'COMPONENT'
 ,p_attribute_sequence=>1
 ,p_display_sequence=>10
@@ -102,67 +132,54 @@ wwv_flow_api.create_plugin_attribute(
 ,p_text_case=>'LOWER'
 );
 wwv_flow_api.create_plugin_attribute(
- p_id=>wwv_flow_api.id(8613761186360226131)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(1692319577982679)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_attribute_scope=>'COMPONENT'
 ,p_attribute_sequence=>2
 ,p_display_sequence=>20
 ,p_prompt=>'Source'
-,p_attribute_type=>'PLSQL'
+,p_attribute_type=>'SQL'
 ,p_is_required=>true
 ,p_default_value=>wwv_flow_string.join(wwv_flow_t_varchar2(
-'select ''',
-'{',
-'    markers: [',
-'      {',
-'        point: [50.45, 30.523333],',
-'        color: "red",',
-'        text: "Red marker text"',
-'      },',
-'      {',
-'        point: [50.4, 30.53],',
-'        color: "blue",',
-'        text: "Blue marker text"',
-'      },',
-'      {',
-'        point: [50.41, 30.5],',
-'        color: "green",',
-'        text: "Green marker text"',
-'      }',
-'    ],',
-'    polygons: [',
-'      {',
-'        color: "blue",',
-'        text: "Blue marker text",',
-'        points: [',
-'          [50.45, 30.523333],',
-'          [50.4, 30.53],',
-'          [50.41, 30.5],',
-'        ]',
-'      },',
-'      {',
-'        color: "red",',
-'        text: "Red marker text",',
-'        points: [',
-'          [50.55, 30.523333],',
-'          [50.5, 30.53],',
-'          [50.51, 30.5],',
-'        ]',
-'      },',
-'      {',
-'        color: "green",',
-'        text: "Green marker text",',
-'        points: [',
-'          [50.45, 30.623333],',
-'          [50.4, 30.63],',
-'          [50.41, 30.6],',
-'        ]',
-'      }',
-'    ]',
-'  }',
-''' result',
-'from dual'))
-,p_supported_ui_types=>'DESKTOP:JQM_SMARTPHONE'
+'-- marker_type: markers or polygons',
+'-- loc_type: point or points',
+'select marker_type as src_marker_type, loc_type as src_loc_type, replace(lat, '','', ''.'')||'', ''||replace(lng, '','', ''.'') as src_loc, color as src_color, label as src_label from src_table'))
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(1721290546497094)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>3
+,p_display_sequence=>30
+,p_prompt=>'Center'
+,p_attribute_type=>'TEXT'
+,p_is_required=>true
+,p_default_value=>'lat, lng'
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(1721907661512899)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>4
+,p_display_sequence=>40
+,p_prompt=>'Zoom'
+,p_attribute_type=>'TEXT'
+,p_is_required=>true
+,p_default_value=>'14'
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(1722533287515333)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>5
+,p_display_sequence=>50
+,p_prompt=>'Max_Zoom'
+,p_attribute_type=>'TEXT'
+,p_is_required=>true
+,p_default_value=>'18'
 ,p_is_translatable=>false
 );
 end;
@@ -206,8 +223,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619395077558465526)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621036243645582504)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-black.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -229,8 +246,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619395367519465527)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621036533606582505)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-shadow.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -264,8 +281,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619395724187465528)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621036890274582506)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-yellow.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -299,8 +316,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619396110129465528)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621037276216582506)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-violet.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -334,8 +351,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619396513957465529)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621037680044582507)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-red.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -369,8 +386,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619396971796465529)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621038137883582507)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-orange.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -402,8 +419,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619397352496465530)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621038518583582508)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-grey.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -437,8 +454,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619397731934465531)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621038898021582509)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-green.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -471,8 +488,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619398184511465531)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621039350598582509)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-blue.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -503,8 +520,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619398511730465531)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621039677817582509)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-black.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -561,8 +578,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619398900444465532)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621040066531582510)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-yellow.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -619,8 +636,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619399364145465532)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621040530232582510)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-violet.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -678,8 +695,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619399702612465533)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621040868699582511)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-red.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -736,8 +753,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619400199467465534)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621041365554582512)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-orange.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -788,8 +805,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619400559819465534)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621041725906582512)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-grey.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -847,8 +864,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619400905415465534)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621042071502582512)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-green.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -904,8 +921,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619401396423465535)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621042562510582513)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/marker-icon-2x-blue.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -927,8 +944,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619505597455470575)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621146763542587553)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/default/marker-shadow.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -958,8 +975,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619505826473470576)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621146992560587554)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/default/marker-icon.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -999,8 +1016,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8619506226553470577)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8621147392640587555)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/markers/default/marker-icon-2x.png'
 ,p_mime_type=>'image/png'
 ,p_file_charset=>'utf-8'
@@ -2426,8 +2443,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8620489579292515818)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8622130745379632796)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/js/leaflet/leaflet.js'
 ,p_mime_type=>'text/javascript'
 ,p_file_charset=>'utf-8'
@@ -2577,8 +2594,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8620489826452515832)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8622130992539632810)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/js/leaflet/leaflet.css'
 ,p_mime_type=>'text/css'
 ,p_file_charset=>'utf-8'
@@ -2607,8 +2624,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(8624640748561747265)
-,p_plugin_id=>wwv_flow_api.id(8431902038399881370)
+ p_id=>wwv_flow_api.id(8626281914648864243)
+,p_plugin_id=>wwv_flow_api.id(8433543204486998348)
 ,p_file_name=>'assets/js/map.js'
 ,p_mime_type=>'text/javascript'
 ,p_file_charset=>'utf-8'
