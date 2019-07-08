@@ -1,6 +1,6 @@
 {
   "name" : "OpenStreetMap Plugin",
-  "version" : "1.0",
+  "version" : "1.1",
   "description" : "Oracle Apex Plugin for OpenStreetMap maps",
   "keywords" : ["maps", "map", "openstreetmap", "leaflet"],
   "homepage" : "https://github.com/apexrest/apex-openstreetmap-plugin",
