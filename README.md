@@ -33,9 +33,23 @@ assets/markers/
 | Name        | Type            | Required | Default Value     |
 |-------------|-----------------|----------|-------------------|
 | Height      | Text            | Yes      | 700px             |
-| Source      | PL/SQL Code     | Yes      | _Described below_ |
+| Source      | SQL Code        | Yes      | _Described below_ |
+| Center      | Text            | Yes      |                   |
+| Zoom        | Text            | Yes      |                   |
+| Max_Zoom    | Text            | Yes      |                   |
 
-The `Source` attribute should contain PL/SQL request or procedure call that returns one string value result with JSON in the next format:
+
+The `Source` attribute should contain an SQL statement like :
+
+```
+-- marker_type: markers or polygons
+-- loc_type: point or points
+-- lat and lng for marker
+-- [lat,lng],[lat,lng],[lat,lng] in loc for polygons
+select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label from src_table
+```
+
+"markers" and "polygons" = src_marker_type, "point" and "points" = src_lat,src_lng or src_loc 
 
 ```json
 {
