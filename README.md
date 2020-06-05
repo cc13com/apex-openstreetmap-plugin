@@ -49,7 +49,7 @@ The `Source` attribute should contain an SQL statement like :
 -- loc_type: point or points
 -- lat and lng for marker
 -- [lat,lng],[lat,lng],[lat,lng] in loc for polygons
-select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label from src_table
+select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label, address1 as src_address from src_table
 ```
 
 ## DB-Columns and JSON

@@ -16,7 +16,7 @@ is
     center varchar2(100) := nvl(p_region.attribute_03, 'lat, lng');
     zoom varchar2(100) := nvl(p_region.attribute_04, '14');
     max_zoom varchar2(100) := nvl(p_region.attribute_05, '18');
-    source varchar2(400) := nvl(p_region.attribute_02, 'select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label from src_table');
+    source varchar2(400) := nvl(p_region.attribute_02, 'select marker_type as src_marker_type, loc_type as src_loc_type, lat as src_lat, lng as src_lng, loc as src_loc, color as src_color, label as src_label, address1 as src_address from src_table');
         
 begin
     apex_javascript.add_library (
