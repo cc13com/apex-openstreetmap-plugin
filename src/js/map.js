@@ -8,7 +8,7 @@ function updateMap(map, mapData, filePrefix = "") {
 
       var marker = L.marker(markerData.point, {icon})
       if (markerData.hasOwnProperty('text')) {
-        marker.bindPopup(markerData.text)
+        marker.bindPopup("<b>" + markerData.text+"</b><br>" + markerData.address)
       }
       
       marker.addTo(map)

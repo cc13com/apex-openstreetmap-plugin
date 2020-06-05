@@ -7,8 +7,8 @@ is
     -- variables
     map_data_markers apex_plugin_util.t_column_value_list;
     map_data_polygons apex_plugin_util.t_column_value_list;
-    query_markers varchar2(400) :=	'''{"''||src_loc_type||''": [''||replace(src_lat, '','', ''.'')||'', ''||replace(src_lng, '','', ''.'')||''], "color": "''||src_color||''", "text": "''||src_label||''"},''';
-    query_polygons varchar2(400) :=	'''{"''||src_loc_type||''": [''||src_loc||''], "color": "''||src_color||''", "text": "''||src_label||''"},''';
+    query_markers varchar2(400) :=	'''{"''||src_loc_type||''": [''||replace(src_lat, '','', ''.'')||'', ''||replace(src_lng, '','', ''.'')||''], "color": "''||src_color||''", "text": "''||src_label||''", "address": "''||replace(src_address, ''"'', '' '')||''"},''';
+    query_polygons varchar2(400) :=	'''{"''||src_loc_type||''": [''||src_loc_type||''], "color": "''||src_color||''", "text": "''||src_label||''"},''';
     x number;
     
     -- attributes
@@ -26,7 +26,7 @@ begin
     );
 
     map_data_markers := APEX_PLUGIN_UTIL.GET_DATA (
-        p_sql_statement    => 'select '||query_markers||' as results from ('||source||' where marker_type = ''markers'')',
+        p_sql_statement    => 'select '||query_markers||' as results from ('||source||' where marker_type = ''markers'' and lat is not null)',
         p_min_columns      => 1,
         p_max_columns      => 1,
         p_component_name   => p_region.name,
@@ -50,10 +50,16 @@ begin
     htp.p('
         <div id="mapid" style="width: 100%; height: ' || height || ';"></div>
         <script>       
+
+                function onMapClick(e) {
+                    $x("P7_LAT").value = e.latlng.lat;
+                    $x("P7_LON").value = e.latlng.lng;
+                }  
+          
             function renderMap() {
                 var mymap = L.map("mapid").setView(['||center||'], '||zoom||');
-                L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {maxZoom: '||max_zoom||'}).addTo(mymap);
-          
+                L.tileLayer("https://{s}.tile.osm.org/{z}/{x}/{y}.png", {maxZoom: '||max_zoom||'}).addTo(mymap);
+                mymap.on("click", onMapClick);
                 updateMap(mymap, ' || '{markers:[');
                 
     FOR x in 1 .. map_data_markers(1).count LOOP
@@ -67,6 +73,7 @@ begin
     
     htp.p(']}, "' || p_plugin.file_prefix || '");
             };
+
         </script>
     ');
 
